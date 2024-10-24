@@ -513,6 +513,9 @@ def load_and_save_masks_and_captions(
         data.append(
             {"image_path": image_name, "mask_path": mask_file, "caption": caption},
         )
+        # data.append(
+        #     {"image_path": image_name, "caption": caption},
+        # )
 
     df = pd.DataFrame(columns=["image_path", "mask_path", "caption"], data=data)
     # save the dataframe to a CSV file

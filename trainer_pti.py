@@ -9,7 +9,7 @@ from typing import List, Optional
 import numpy as np
 import torch
 import torch.utils.checkpoint
-from diffusers.models.attention_processor import LoRAAttnProcessor, LoRAAttnProcessor2_0
+from diffusers.models.attention_processor import LoRAAttnProcessor, LoRAAttnProcessor2_0 , AttnProcessor
 from diffusers.optimization import get_scheduler
 from safetensors.torch import save_file
 from tqdm.auto import tqdm
@@ -21,7 +21,14 @@ from dataset_and_utils import (
     unet_attn_processors_state_dict,
 )
 
-
+def is_belong_to_blocks(key, blocks):
+    try:
+        for g in blocks:
+            if g in key:
+                return True
+        return False
+    except Exception as e:
+        raise type(e)(f"failed to is_belong_to_block, due to: {e}")
 def main(
     pretrained_model_name_or_path: Optional[
         str
@@ -152,34 +159,56 @@ def main(
     else:
         # Do lora-training instead.
         unet.requires_grad_(True)
-        unet_lora_attn_procs = {}
-        unet_lora_parameters = []
-        for name, attn_processor in unet.attn_processors.items():
-            cross_attention_dim = (
-                None
-                if name.endswith("attn1.processor")
-                else unet.config.cross_attention_dim
-            )
-            if name.startswith("mid_block"):
-                hidden_size = unet.config.block_out_channels[-1]
-            elif name.startswith("up_blocks"):
-                block_id = int(name[len("up_blocks.")])
-                hidden_size = list(reversed(unet.config.block_out_channels))[block_id]
-            elif name.startswith("down_blocks"):
-                block_id = int(name[len("down_blocks.")])
-                hidden_size = unet.config.block_out_channels[block_id]
+        # unet_lora_attn_procs = {}
+        # unet_lora_parameters = []
+        # for name, attn_processor in unet.attn_processors.items():
+        #     cross_attention_dim = (
+        #         None
+        #         if name.endswith("attn1.processor")
+        #         else unet.config.cross_attention_dim
+        #     )
+        #     if name.startswith("mid_block"):
+        #         hidden_size = unet.config.block_out_channels[-1]
+        #     elif name.startswith("up_blocks"):
+        #         block_id = int(name[len("up_blocks.")])
+        #         hidden_size = list(reversed(unet.config.block_out_channels))[block_id]
+        #     elif name.startswith("down_blocks"):
+        #         block_id = int(name[len("down_blocks.")])
+        #         hidden_size = unet.config.block_out_channels[block_id]
 
-            module = LoRAAttnProcessor2_0(
-                hidden_size=hidden_size,
-                cross_attention_dim=cross_attention_dim,
-                rank=lora_rank,
-            )
-            unet_lora_attn_procs[name] = module
-            module.to(device)
-            unet_lora_parameters.extend(module.parameters())
+        #     module = LoRAAttnProcessor2_0(
+        #         hidden_size=hidden_size,
+        #         cross_attention_dim=cross_attention_dim,
+        #         rank=lora_rank,
+        #     )
+            
+        #     unet_lora_attn_procs[name] = module
+        #     module.to(device)
+        #     unet_lora_parameters.extend(module.parameters())
 
-        unet.set_attn_processor(unet_lora_attn_procs)
+        # unet.set_attn_processor(unet_lora_attn_procs)
+        from peft import LoraConfig
+        target_modules = ["to_k", "to_q", "to_v", "to_out.0"]
+        # content_b_lora_blocks = "unet.up_blocks.0.attentions.0"
+        # style_b_lora_blocks = "unet.up_blocks.0.attentions.1"
+        # target_blocks = [content_b_lora_blocks, style_b_lora_blocks]
+        # blocks = [(".").join(blk.split(".")[1:]) for blk in target_blocks]
 
+        # attns = [
+        #     attn_processor_name.rsplit(".", 1)[0]
+        #     for attn_processor_name, _ in unet.attn_processors.items()
+        #     if is_belong_to_blocks(attn_processor_name, blocks)
+        # ]
+        # target_modules = [f"{attn}.{mat}" for mat in ["to_k", "to_q", "to_v", "to_out.0"] for attn in attns]
+        unet_lora_config = LoraConfig(
+            r=lora_rank,
+            use_dora=False,
+            lora_alpha=lora_rank,
+            init_lora_weights="gaussian",
+            target_modules=target_modules,
+        )
+        unet.add_adapter(unet_lora_config)
+        unet_lora_parameters = list(filter(lambda p: p.requires_grad, unet.parameters()))
         params_to_optimize = [
             {
                 "params": unet_lora_parameters,

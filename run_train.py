@@ -1,11 +1,11 @@
-from pti_trainer.train import train as train_pti
+from train import train as train_pti
 import os
 import sys
 sys.path.append("pti_trainer")
 os.environ['DISABLE_AUTO_CAPTIONS'] = 'true' 
 TRAINING_MODEL_DIR = "out_astria"
 train_pti(
-    input_images=f"/workspace/training_sdxl/astria_training/images/",
+    input_images=f"/workspace/training_sdxl_pti/images/",
     output_dir=TRAINING_MODEL_DIR,
     pretrained_model_name_or_path="BKM1804/lustify-sdxl",
     seed= 1337,
@@ -22,13 +22,9 @@ train_pti(
     class_name="woman",
     token_string="ohwx",
     caption_prefix= 'a photo of',
-    checkpointing_steps=500,
+    checkpointing_steps=1000,
     # Uses CLIPSEG to mask target in the loss function
     # mask_target_prompts=tune.name if use_photo and (tune.mask_target or os.environ.get('MASK_TARGET')) else None,
     mask_target_prompts = None
     # *(['--use_face_detection_instead', 'USE_FACE_DETECTION_INSTEAD'] if tune.face_crop and tune.name in "man woman boy girl male female" else []),
 )
-
-os.rename(f"{TRAINING_MODEL_DIR}/lora.safetensors", f"{MODELS_DIR}/{tune.id}.safetensors")
-os.rename(f"{TRAINING_MODEL_DIR}/embeddings.pti", f"{MODELS_DIR}/{tune.id}.pti")
-os.rename(f"{TRAINING_MODEL_DIR}/special_params.json", f"{MODELS_DIR}/{tune.id}.json")

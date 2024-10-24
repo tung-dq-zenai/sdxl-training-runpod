@@ -34,7 +34,7 @@ def train(
     caption_prefix="a photo of",
     mask_target_prompts=None,
     crop_based_on_salience=True,
-    use_face_detection_instead=False,
+    use_face_detection_instead=True,
     clipseg_temperature=1.0,
     verbose=True,
     checkpointing_steps=200
