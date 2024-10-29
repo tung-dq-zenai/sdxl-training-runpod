@@ -1,0 +1,7 @@
+runpod==1.7.4
+opencv-python
+mediapipe
+peft
+accelerate
+transformers
+git+https://github.com/huggingface/diffusers
