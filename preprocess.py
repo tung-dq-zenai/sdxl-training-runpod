@@ -3,16 +3,11 @@
 # Have CLIPSeg auto mask concept
 
 import struct
-import gc
 import fnmatch
-import mimetypes
 import os
 import re
-import shutil
-import tarfile
 from pathlib import Path
 from typing import List, Literal, Optional, Tuple, Union
-from zipfile import ZipFile
 
 import cv2
 import mediapipe as mp
@@ -24,16 +19,13 @@ from tqdm import tqdm
 from transformers import (
     BlipForConditionalGeneration,
     BlipProcessor,
+    AutoProcessor, 
     CLIPSegForImageSegmentation,
-    CLIPSegProcessor,
     Swin2SRForImageSuperResolution,
     Swin2SRImageProcessor,
 )
 
-MODEL_PATH = "/data/cache"
-# TEMP_OUT_DIR = "/data/temp/"
-# TEMP_IN_DIR = "./temp_in/"
-
+MODEL_PATH = "cache"
 
 def preprocess(
     # input_zip_path: Path,
@@ -138,7 +130,7 @@ def clipseg_mask_generator(
 
         target_prompts = [target_prompts] * len(images)
 
-    processor = CLIPSegProcessor.from_pretrained(model_id, cache_dir=MODEL_PATH)
+    processor = AutoProcessor.from_pretrained(model_id, cache_dir=MODEL_PATH)
     model = CLIPSegForImageSegmentation.from_pretrained(
         model_id, cache_dir=MODEL_PATH
     ).to(device)

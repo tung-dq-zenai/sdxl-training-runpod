@@ -9,7 +9,6 @@ from typing import List, Optional
 import numpy as np
 import torch
 import torch.utils.checkpoint
-from diffusers.models.attention_processor import LoRAAttnProcessor, LoRAAttnProcessor2_0
 from diffusers.optimization import get_scheduler
 from safetensors.torch import save_file
 from peft import LoraConfig
@@ -371,31 +370,31 @@ def main(
             for idx, text_encoder in enumerate(text_encoders):
                 embedding_handler.retract_embeddings()
 
-            if global_step % checkpointing_steps == 0:
-                # save the required params of unet with safetensor
+            # if global_step % checkpointing_steps == 0:
+            #     # save the required params of unet with safetensor
 
-                if not is_lora:
-                    tensors = {
-                        name: param
-                        for name, param in unet.named_parameters()
-                        if name in unet_param_to_optimize_names
-                    }
-                    save_file(
-                        tensors,
-                        f"{checkpoint_dir}/unet/checkpoint-{global_step}.unet.safetensors",
-                    )
+            #     if not is_lora:
+            #         tensors = {
+            #             name: param
+            #             for name, param in unet.named_parameters()
+            #             if name in unet_param_to_optimize_names
+            #         }
+            #         save_file(
+            #             tensors,
+            #             f"{checkpoint_dir}/unet/checkpoint-{global_step}.unet.safetensors",
+            #         )
 
-                else:
-                    lora_tensors = unet_attn_processors_state_dict(unet)
+            #     else:
+            #         lora_tensors = unet_attn_processors_state_dict(unet)
 
-                    # save_file(
-                    #     lora_tensors,
-                    #     f"{checkpoint_dir}/unet/checkpoint-{global_step}.lora.safetensors",
-                    # )
+            #         save_file(
+            #             lora_tensors,
+            #             f"{checkpoint_dir}/unet/checkpoint-{global_step}.lora.safetensors",
+            #         )
 
-                embedding_handler.save_embeddings(
-                    f"{checkpoint_dir}/embeddings/checkpoint-{global_step}.pti",
-                )
+            #     embedding_handler.save_embeddings(
+            #         f"{checkpoint_dir}/embeddings/checkpoint-{global_step}.pti",
+            #     )
 
     # final_save
     print("Saving final model for return")

@@ -1,12 +1,6 @@
 import argparse
 import os
 import shutil
-# import tarfile
-# import zipfile
-
-# from cog import Path
-
-# from predict import SDXL_MODEL_CACHE, SDXL_URL, download_weights
 from preprocess import preprocess
 from trainer_pti import main
 

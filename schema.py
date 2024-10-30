@@ -12,5 +12,15 @@ TRAIN_SCHEMA = {
         'type': str,
         'required': False,
         'default': "sks"
+    },
+    "batch_size": {
+        'type': int,
+        'required': False,
+        'default': 16
+    },
+    'steps': {
+        'type': int,
+        'required': False,
+        'default': 1000
     }
 }
