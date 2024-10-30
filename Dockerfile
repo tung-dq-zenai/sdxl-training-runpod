@@ -1,8 +1,7 @@
 FROM runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget git zip unzip \
-    && rm -rf /var/lib/apt/lists/*
+    wget git zip unzip 
 
 # Copy only requirements first to leverage caching
 COPY requirements.txt .

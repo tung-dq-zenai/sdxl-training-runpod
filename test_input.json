@@ -23,6 +23,8 @@
             "https://lustylens.s3.amazonaws.com/generations/renca/renca_19.jpg"
         ],
         "class_name": "woman",
-        "identifier": "ohwx"
+        "identifier": "ohwx",
+        "steps": 20,
+        "batch_size": 4
     }
 }

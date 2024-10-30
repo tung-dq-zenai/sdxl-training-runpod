@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Enable error handling
-set -e
+# # Enable error handling
+# set -e
 
 # Set variables
 image_name="tadesscrapy/flux_training"

@@ -65,7 +65,11 @@ def run(job):
     )
     
     os.system(f"zip -r {job_id}.zip {OUTPUT_FOLDER_BASE}")
-    s3_uri = s3_helper.upload(f"{job_id}.zip", AWS_S3_BUCKET_NAME, AWS_S3_IMAGES_PATH)
+    s3_uri = s3_helper.upload(f"{job_id}.zip", AWS_S3_BUCKET_NAME, f"{AWS_S3_IMAGES_PATH}/{job_id}.zip")
+    
+    os.system(f"rm -rf {OUTPUT_FOLDER_BASE}")
+    os.system(f"rm -rf {job_id}.zip")
+    os.system(f"rm -rf {instance_dir_name}")
     
     return {
         "model_url": s3_helper.s3_uri_to_link(s3_uri)

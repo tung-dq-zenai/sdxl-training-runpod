@@ -21,6 +21,6 @@ TRAIN_SCHEMA = {
     'steps': {
         'type': int,
         'required': False,
-        'default': 1000
+        'default': 250
     }
 }
