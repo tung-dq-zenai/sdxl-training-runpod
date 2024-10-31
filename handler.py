@@ -13,8 +13,9 @@ from s3_helper import S3Helper
 
 AWS_S3_BUCKET_NAME = "lustylens"
 AWS_S3_IMAGES_PATH = "generations"
-OUTPUT_FOLDER_BASE = "output"
-os.makedirs(OUTPUT_FOLDER_BASE, exist_ok=True)
+OUTPUT_FOLDER = "model"
+DATA_FOLDER = "data"
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 s3_helper = S3Helper()
 
@@ -32,16 +33,19 @@ def run(job):
         return {'error': validate_train['errors']}
     
     validate_train = validate_train['validated_input']
-    instance_dir_name = handle_data_paths(
-        validate_train['images']
+    handle_data_paths(
+        validate_train['images'], DATA_FOLDER
     )
     
+    # save source data for face swap
+    os.system(f"cp -r {DATA_FOLDER} {OUTPUT_FOLDER}")
+    
     train(
-        input_images=instance_dir_name,
-        output_dir=OUTPUT_FOLDER_BASE,
+        input_images=DATA_FOLDER,
+        output_dir=OUTPUT_FOLDER,
         pretrained_model_name_or_path="trongg/lustify_v4",
         seed=42,
-        resolution=512,
+        resolution=768,
         train_batch_size=validate_train['batch_size'],
         num_train_epochs=4000,
         max_train_steps=validate_train['steps'],
@@ -64,12 +68,12 @@ def run(job):
         checkpointing_steps=500,
     )
     
-    os.system(f"zip -r {job_id}.zip {OUTPUT_FOLDER_BASE}")
+    os.system(f"zip -r {job_id}.zip {OUTPUT_FOLDER}")
     s3_uri = s3_helper.upload(f"{job_id}.zip", AWS_S3_BUCKET_NAME, f"{AWS_S3_IMAGES_PATH}/{job_id}.zip")
     
-    os.system(f"rm -rf {OUTPUT_FOLDER_BASE}")
+    os.system(f"rm -rf {OUTPUT_FOLDER}")
     os.system(f"rm -rf {job_id}.zip")
-    os.system(f"rm -rf {instance_dir_name}")
+    os.system(f"rm -rf {DATA_FOLDER}")
     
     return {
         "model_url": s3_helper.s3_uri_to_link(s3_uri)
