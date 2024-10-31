@@ -32,18 +32,15 @@ handler = TokenEmbeddingsHandler(
     [text_encoder_one, text_encoder_two], [tokenizer_one, tokenizer_two]
 )
 
-handler.load_embeddings("/workspace/training_sdxl_pti/natasha_768_2000.pti")
+handler.load_embeddings("/workspace/training_sdxl_pti/out_astria/embeddings.pti")
 
 pipe = StableDiffusionXLPipeline(vae = vae , text_encoder = text_encoder_one , text_encoder_2 = text_encoder_two , unet = unet , tokenizer = tokenizer_one ,  tokenizer_2 = tokenizer_two , scheduler = noise_scheduler ).to('cuda')
-pipe.load_lora_weights('/workspace/training_sdxl_pti/natasha_768_2000.safetensors' , adapter_name = 'lora')
+pipe.load_lora_weights('/workspace/training_sdxl_pti/out_astria/lora.safetensors' , adapter_name = 'lora')
 pipe.set_adapters("lora")
 
-prompt = "a <s0><s1> woman doing sexy pose, naked, front view, luxurious bedroom, a window, snowy forest, highres, prominent grain, muted low grain,"
-# for k, v in token_map.items():
-#     prompt = prompt.replace(k, v)
-# print(f"Prompt: {prompt}")
+prompt = "a <s0><s1> woman doing sexy pose, naked, front view, luxurious bedroom, a window, snowy forest, highres, prominent grain, muted low grain."
 neg_prompt = "(worst quality, low quality, normal quality), disabled body, sketches, (manicure:1.2), lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, extra fingers, fewer digits, cropped, jpeg artifacts, signature, watermark, username, blurry, momochrome, (ugly) , bad hand ,  bad leg , lost fingers, 4 fingers."
-num_outputs = 2
+num_outputs = 4
 width = 768
 height = 1024
 guidance_scale = 3.5
@@ -65,7 +62,7 @@ common_args = {
 }            
 sdxl_kwargs["width"] = width
 sdxl_kwargs["height"] = height
-sdxl_kwargs["cross_attention_kwargs"] = {"scale": 1.1}
+sdxl_kwargs["cross_attention_kwargs"] = {"scale": 1.0}
 results = pipe(**common_args, **sdxl_kwargs).images
 for i , img in enumerate(results):
     img.save(f'{i}.png')

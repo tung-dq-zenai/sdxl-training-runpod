@@ -392,12 +392,13 @@ def main(
                     )
 
                 else:
-                    lora_tensors = unet_attn_processors_state_dict(unet)
+                    # lora_tensors = unet_attn_processors_state_dict(unet)
+                    unet.save_attn_procs(f"{checkpoint_dir}/unet", weight_name=f"checkpoint-{global_step}.lora.safetensors")
 
-                    save_file(
-                        lora_tensors,
-                        f"{checkpoint_dir}/unet/checkpoint-{global_step}.lora.safetensors",
-                    )
+                    # save_file(
+                    #     lora_tensors,
+                    #     f"{checkpoint_dir}/unet/checkpoint-{global_step}.lora.safetensors",
+                    # )
 
                 embedding_handler.save_embeddings(
                     f"{checkpoint_dir}/embeddings/checkpoint-{global_step}.pti",
@@ -416,11 +417,12 @@ def main(
             f"{output_dir}/unet.safetensors",
         )
     else:
-        lora_tensors = unet_attn_processors_state_dict(unet)
-        save_file(
-            lora_tensors,
-            f"{output_dir}/lora.safetensors",
-        )
+        # lora_tensors = unet_attn_processors_state_dict(unet)
+        unet.save_attn_procs(output_dir, weight_name="lora.safetensors")
+        # save_file(
+        #     lora_tensors,
+        #     f"{output_dir}/lora.safetensors",
+        # )
 
     embedding_handler.save_embeddings(
         f"{output_dir}/embeddings.pti",
