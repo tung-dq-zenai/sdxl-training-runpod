@@ -1,21 +1,20 @@
 from train import train as train_pti
 import os
 import sys
-sys.path.append("pti_trainer")
 os.environ['DISABLE_AUTO_CAPTIONS'] = 'true' 
 TRAINING_MODEL_DIR = "out_astria"
 train_pti(
-    input_images=f"/workspace/training_sets/renca_training_images/",
+    input_images=f"/workspace/training_sets/natasha_training_images/",
     output_dir=TRAINING_MODEL_DIR,
     pretrained_model_name_or_path="BKM1804/lustify-sdxl",
     seed= 1337,
-    resolution=1024,
+    resolution=768,
     train_batch_size= 4,
     num_train_epochs= 4000,
     max_train_steps=3000,
     is_lora=True,
     is_sdxl=True,
-    unet_learning_rate= 3e-6,
+    unet_learning_rate= 2e-6,
     ti_lr= 3e-4,
     lora_lr= 1e-4,
     lora_rank=32,

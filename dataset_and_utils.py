@@ -282,11 +282,6 @@ def unet_attn_processors_state_dict(unet) -> Dict[str, torch.tensor]:
 
     attn_processors_state_dict = {}
 
-    # for attn_processor_key, attn_processor in attn_processors.items():
-    #     for parameter_key, parameter in attn_processor.items():
-    #         attn_processors_state_dict[
-    #             f"{attn_processor_key}.{parameter_key}"
-    #         ] = parameter
     unet.save_attn_procs("./ckpt/")
     return attn_processors_state_dict
 

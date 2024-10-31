@@ -119,68 +119,34 @@ def swin_ir_sr(
 @torch.cuda.amp.autocast()
 def clipseg_mask_generator(
     images: List[Image.Image],
-    target_prompts: Union[List[str], str],
-    model_id: Literal[
-        "CIDAS/clipseg-rd64-refined", "CIDAS/clipseg-rd16"
-    ] = "CIDAS/clipseg-rd64-refined",
-    device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
-    bias: float = 0.01,
-    temp: float = 1.0,
-    **kwargs,
 ) -> List[Image.Image]:
-    """
-    Returns a greyscale mask for each image, where the mask is the probability of the target prompt being present in the image
-    """
-
-    if isinstance(target_prompts, str):
-        print(
-            f'Warning: only one target prompt "{target_prompts}" was given, so it will be used for all images'
-        )
-
-        target_prompts = [target_prompts] * len(images)
-
-    processor = CLIPSegProcessor.from_pretrained(model_id)
-    model = CLIPSegForImageSegmentation.from_pretrained(
-        model_id
-    ).to(device)
-
+    from densepose.run import DenseposeDetector
     masks = []
-
-    for image, prompt in tqdm(zip(images, target_prompts)):
-        original_size = image.size
-
-        inputs = processor(
-            text=prompt,
-            images=image,
-            padding="max_length",
-            truncation=True,
-            return_tensors="pt",
-        ).to(device)
-        inputs = {k: v.cuda() for k, v in inputs.items()}
+    model="densepose_r50_fpn_dl.torchscript"
+    cmap="parula"
+    resolution=512
+    model = DenseposeDetector.from_pretrained(filename=model).to('cuda')
+    for image in images:
+        ori_size = image.size
+        np_image =  np.asarray(image, dtype=np.uint8)
+        rs = model(np_image, output_type="np", detect_resolution=resolution , cmap = cmap)
+        mask = rs > 1
+        rs[mask] = 255
+        rs = Image.fromarray(rs).resize(ori_size).convert('L')
         
-        with torch.no_grad():
-            outputs = model(**inputs)
-            # preds = outputs.logits
-
-        logits = outputs.logits
-        probs = torch.sigmoid(logits) * 255
-
-        # make mask greyscale
-        mask = Image.fromarray(probs.cpu().numpy().astype(np.uint8)).convert("L")
-
-        # resize mask to original size
-        mask = mask.resize(original_size)
-        mask = np.array(mask)
+        expand_amount = 10  # Number of pixels to expand
+        mask_dilated = rs
         
-        # normalize the mask
-        mask_min = mask.min()
-        mask_max = mask.max()
-        mask = (mask - mask_min) / (mask_max - mask_min)
-        threshold = 0.4
-        mask = mask > threshold
-        mask = Image.fromarray(mask)
-        masks.append(mask)
+        # Repeatedly apply maximum filter to expand white regions
+        for _ in range(expand_amount):
+            mask_dilated = mask_dilated.filter(ImageFilter.MaxFilter(3))
+        
+        # 2. Blur the boundaries
+        blur_amount = 10  # Adjust blur strength
+        final_mask = mask_dilated.filter(ImageFilter.GaussianBlur(radius=blur_amount))
 
+        
+        masks.append(final_mask)
     return masks
 
 
@@ -482,7 +448,7 @@ def load_and_save_masks_and_captions(
     print(f"Generating {len(images)} masks...")
     if not use_face_detection_instead:
         seg_masks = clipseg_mask_generator(
-            images=images, target_prompts=mask_target_prompts, temp=temp
+            images=images
         )
     else:
         seg_masks = face_mask_google_mediapipe(images=images)
