@@ -13,7 +13,7 @@ from diffusers.models.attention_processor import LoRAAttnProcessor, LoRAAttnProc
 from diffusers.optimization import get_scheduler
 from safetensors.torch import save_file
 from tqdm.auto import tqdm
-
+from convert_utils import modify_and_save_lora_model , modify_and_save_embedding_model
 from dataset_and_utils import (
     PreprocessedDataset,
     TokenEmbeddingsHandler,
@@ -159,34 +159,7 @@ def main(
     else:
         # Do lora-training instead.
         unet.requires_grad_(True)
-        # unet_lora_attn_procs = {}
-        # unet_lora_parameters = []
-        # for name, attn_processor in unet.attn_processors.items():
-        #     cross_attention_dim = (
-        #         None
-        #         if name.endswith("attn1.processor")
-        #         else unet.config.cross_attention_dim
-        #     )
-        #     if name.startswith("mid_block"):
-        #         hidden_size = unet.config.block_out_channels[-1]
-        #     elif name.startswith("up_blocks"):
-        #         block_id = int(name[len("up_blocks.")])
-        #         hidden_size = list(reversed(unet.config.block_out_channels))[block_id]
-        #     elif name.startswith("down_blocks"):
-        #         block_id = int(name[len("down_blocks.")])
-        #         hidden_size = unet.config.block_out_channels[block_id]
 
-        #     module = LoRAAttnProcessor2_0(
-        #         hidden_size=hidden_size,
-        #         cross_attention_dim=cross_attention_dim,
-        #         rank=lora_rank,
-        #     )
-            
-        #     unet_lora_attn_procs[name] = module
-        #     module.to(device)
-        #     unet_lora_parameters.extend(module.parameters())
-
-        # unet.set_attn_processor(unet_lora_attn_procs)
         from peft import LoraConfig
         target_modules = ["to_k", "to_q", "to_v", "to_out.0"]
         unet_lora_config = LoraConfig(
@@ -392,13 +365,7 @@ def main(
                     )
 
                 else:
-                    # lora_tensors = unet_attn_processors_state_dict(unet)
                     unet.save_attn_procs(f"{checkpoint_dir}/unet", weight_name=f"checkpoint-{global_step}.lora.safetensors")
-
-                    # save_file(
-                    #     lora_tensors,
-                    #     f"{checkpoint_dir}/unet/checkpoint-{global_step}.lora.safetensors",
-                    # )
 
                 embedding_handler.save_embeddings(
                     f"{checkpoint_dir}/embeddings/checkpoint-{global_step}.pti",
@@ -417,17 +384,15 @@ def main(
             f"{output_dir}/unet.safetensors",
         )
     else:
-        # lora_tensors = unet_attn_processors_state_dict(unet)
         unet.save_attn_procs(output_dir, weight_name="lora.safetensors")
-        # save_file(
-        #     lora_tensors,
-        #     f"{output_dir}/lora.safetensors",
-        # )
+        lora_file = f"{output_dir}/lora.safetensors"
+        modify_and_save_lora_model(input_model_path = lora_file , output_model_path =lora_file )
 
-    embedding_handler.save_embeddings(
-        f"{output_dir}/embeddings.pti",
-    )
-
+    embedding_file = f"{output_dir}/embeddings.pti"
+    new_embedding_file = f"{output_dir}/embeddings.pt"
+    embedding_handler.save_embeddings(embedding_file)
+    modify_and_save_embedding_model(input_model_path = embedding_file , output_model_path = new_embedding_file)
+    os.remove(embedding_file)
     to_save = token_dict
     with open(f"{output_dir}/special_params.json", "w") as f:
         json.dump(to_save, f)
