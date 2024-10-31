@@ -10,3 +10,4 @@ peft==0.13.2
 sentencepiece==0.2.0
 sentence-transformers==2.3.0
 protobuf==4.25.5
+einops==0.8.0
