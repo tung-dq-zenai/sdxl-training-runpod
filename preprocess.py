@@ -27,7 +27,7 @@ from transformers import (
 
 
 MODEL_PATH = "/data/cache"
-training_data_dir = "./training_data_dir/"
+
 
 
 def preprocess(
@@ -44,7 +44,6 @@ def preprocess(
     temp: float,
     substitution_tokens: List[str],
 ) -> Path:
-    # training_data_dir = output_dir
     load_and_save_masks_and_captions(
         input_dir=input_path,
         output_dir = output_dir , 

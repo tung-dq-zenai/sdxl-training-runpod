@@ -3,7 +3,6 @@ import os
 import shutil
 from preprocess import preprocess
 from trainer_pti import main
-from preprocess import training_data_dir
 
 
 def train(
