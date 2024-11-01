@@ -6,3 +6,5 @@ ckpt
 *.png
 *.jpeg
 *.jpg
+__pycache__
+.ipynb_checkpoints
