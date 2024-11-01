@@ -1,0 +1,3 @@
+[submodule "densepose"]
+	path = densepose
+	url = https://github.com/BKM1804/densepose
