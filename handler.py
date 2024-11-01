@@ -13,8 +13,6 @@ from s3_helper import S3Helper
 
 AWS_S3_BUCKET_NAME = "lustylens"
 AWS_S3_IMAGES_PATH = "generations"
- 
-os.makedirs(OUTPUT_FOLDER_BASE, exist_ok=True)
 
 OUTPUT_FOLDER = "model"
 DATA_FOLDER = "data"
