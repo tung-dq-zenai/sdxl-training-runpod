@@ -1,0 +1,10 @@
+out_astria
+checkpoint
+images
+training_data_dir
+ckpt
+*.png
+*.jpeg
+*.jpg
+__pycache__
+.ipynb_checkpoints

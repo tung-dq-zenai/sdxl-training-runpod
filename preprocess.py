@@ -6,9 +6,9 @@ import struct
 import fnmatch
 import os
 import re
+import shutil
 from pathlib import Path
 from typing import List, Literal, Optional, Tuple, Union
-
 import cv2
 import mediapipe as mp
 import numpy as np
@@ -19,13 +19,16 @@ from tqdm import tqdm
 from transformers import (
     BlipForConditionalGeneration,
     BlipProcessor,
-    AutoProcessor, 
     CLIPSegForImageSegmentation,
+    CLIPSegProcessor,
     Swin2SRForImageSuperResolution,
     Swin2SRImageProcessor,
 )
 
-MODEL_PATH = "cache"
+
+MODEL_PATH = "/data/cache"
+
+
 
 def preprocess(
     # input_zip_path: Path,
@@ -41,9 +44,9 @@ def preprocess(
     temp: float,
     substitution_tokens: List[str],
 ) -> Path:
-
     load_and_save_masks_and_captions(
         input_dir=input_path,
+        output_dir = output_dir , 
         caption_text=caption_text + " " + token_string + " " + class_name,
         mask_target_prompts=mask_target_prompts,
         target_size=target_size,
@@ -110,57 +113,34 @@ def swin_ir_sr(
 @torch.cuda.amp.autocast()
 def clipseg_mask_generator(
     images: List[Image.Image],
-    target_prompts: Union[List[str], str],
-    model_id: Literal[
-        "CIDAS/clipseg-rd64-refined", "CIDAS/clipseg-rd16"
-    ] = "CIDAS/clipseg-rd64-refined",
-    device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
-    bias: float = 0.01,
-    temp: float = 1.0,
-    **kwargs,
 ) -> List[Image.Image]:
-    """
-    Returns a greyscale mask for each image, where the mask is the probability of the target prompt being present in the image
-    """
-
-    if isinstance(target_prompts, str):
-        print(
-            f'Warning: only one target prompt "{target_prompts}" was given, so it will be used for all images'
-        )
-
-        target_prompts = [target_prompts] * len(images)
-
-    processor = AutoProcessor.from_pretrained(model_id, cache_dir=MODEL_PATH)
-    model = CLIPSegForImageSegmentation.from_pretrained(
-        model_id, cache_dir=MODEL_PATH
-    ).to(device)
-
+    from densepose.run import DenseposeDetector
     masks = []
+    model="densepose_r50_fpn_dl.torchscript"
+    cmap="parula"
+    resolution=512
+    model = DenseposeDetector.from_pretrained(filename=model).to('cuda')
+    for image in images:
+        ori_size = image.size
+        np_image =  np.asarray(image, dtype=np.uint8)
+        rs = model(np_image, output_type="np", detect_resolution=resolution , cmap = cmap)
+        mask = rs > 1
+        rs[mask] = 255
+        rs = Image.fromarray(rs).resize(ori_size).convert('L')
+        
+        expand_amount = 10  # Number of pixels to expand
+        mask_dilated = rs
+        
+        # Repeatedly apply maximum filter to expand white regions
+        for _ in range(expand_amount):
+            mask_dilated = mask_dilated.filter(ImageFilter.MaxFilter(3))
+        
+        # 2. Blur the boundaries
+        blur_amount = 10  # Adjust blur strength
+        final_mask = mask_dilated.filter(ImageFilter.GaussianBlur(radius=blur_amount))
 
-    for image, prompt in tqdm(zip(images, target_prompts)):
-        original_size = image.size
-
-        inputs = processor(
-            text=prompt,
-            images=image,
-            padding="max_length",
-            truncation=True,
-            return_tensors="pt",
-        ).to(device)
-
-        outputs = model(**inputs)
-
-        logits = outputs.logits
-        probs = torch.sigmoid(logits) * 255
-
-        # make mask greyscale
-        mask = Image.fromarray(probs.cpu().numpy().astype(np.uint8)).convert("L")
-
-        # resize mask to original size
-        mask = mask.resize(original_size)
-
-        masks.append(mask)
-
+        
+        masks.append(final_mask)
     return masks
 
 
@@ -229,7 +209,8 @@ def face_mask_google_mediapipe(
         # Perform face detection
         results_detection = face_detection.process(image_np)
         ih, iw, _ = image_np.shape
-        if results_detection.detections:
+        if results_detection.detections and 0 :
+
             for detection in results_detection.detections:
                 bboxC = detection.location_data.relative_bounding_box
 
@@ -399,6 +380,7 @@ def orient_by_exif(pil_image: Image.Image):
 
 def load_and_save_masks_and_captions(
     input_dir: Union[str, List[str]],
+    output_dir : Optional[str] = None,
     caption_text: Optional[str] = None,
     mask_target_prompts: Optional[Union[List[str], str]] = None,
     target_size: int = 1024,
@@ -462,7 +444,7 @@ def load_and_save_masks_and_captions(
     print(f"Generating {len(images)} masks...")
     if not use_face_detection_instead:
         seg_masks = clipseg_mask_generator(
-            images=images, target_prompts=mask_target_prompts, temp=temp
+            images=images
         )
     else:
         seg_masks = face_mask_google_mediapipe(images=images)
@@ -491,6 +473,10 @@ def load_and_save_masks_and_captions(
     ]
 
     data = []
+    
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+    os.makedirs(output_dir, exist_ok=True)
 
     # iterate through the images, masks, and captions and add a row to the dataframe for each
     for idx, (image, mask, caption) in enumerate(zip(images, seg_masks, captions)):
@@ -501,6 +487,7 @@ def load_and_save_masks_and_captions(
         image.save(os.path.join(input_dir, image_name))
         mask.save(os.path.join(input_dir, mask_file))
 
+
         # add a new row to the dataframe with the file names and caption
         data.append(
             {"image_path": image_name, "mask_path": mask_file, "caption": caption},
@@ -508,7 +495,8 @@ def load_and_save_masks_and_captions(
 
     df = pd.DataFrame(columns=["image_path", "mask_path", "caption"], data=data)
     # save the dataframe to a CSV file
-    df.to_csv(os.path.join(input_dir, "captions.csv"), index=False)
+    df.to_csv(os.path.join(output_dir, "captions.csv"), index=False)
+
 
 
 def _find_files(pattern, dir="."):

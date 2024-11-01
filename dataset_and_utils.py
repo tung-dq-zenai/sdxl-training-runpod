@@ -12,11 +12,7 @@ from safetensors import safe_open
 from safetensors.torch import save_file
 from torch.utils.data import Dataset
 from transformers import AutoTokenizer, PretrainedConfig
-from diffusers.utils import (
-    convert_state_dict_to_diffusers,
-    convert_unet_state_dict_to_peft
-)
-from peft.utils import get_peft_model_state_dict
+
 
 
 def prepare_image(
@@ -286,17 +282,9 @@ def unet_attn_processors_state_dict(unet) -> Dict[str, torch.tensor]:
     attn_processors = unet.attn_processors
 
     attn_processors_state_dict = {}
+    unet.save_attn_procs("./ckpt/")
+    return attn_processors_state_dict
 
-    # for attn_processor_key, attn_processor in attn_processors.items():
-    #     for parameter_key, parameter in attn_processor.state_dict().items():
-    #         attn_processors_state_dict[
-    #             f"{attn_processor_key}.{parameter_key}"
-    #         ] = parameter
-
-    # return attn_processors_state_dict
-    
-    unet_lora_layers_to_save = convert_state_dict_to_diffusers(get_peft_model_state_dict(unet))
-    return unet_lora_layers_to_save
 
 
 class TokenEmbeddingsHandler:

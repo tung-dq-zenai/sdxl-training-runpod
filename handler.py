@@ -13,9 +13,11 @@ from s3_helper import S3Helper
 
 AWS_S3_BUCKET_NAME = "lustylens"
 AWS_S3_IMAGES_PATH = "generations"
+
 OUTPUT_FOLDER = "model"
 DATA_FOLDER = "data"
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
 
 s3_helper = S3Helper()
 
@@ -62,7 +64,7 @@ def run(job):
         class_name=validate_train['class_name'],
         mask_target_prompts=None,
         crop_based_on_salience=True,
-        use_face_detection_instead=True,
+        use_face_detection_instead=False,
         clipseg_temperature=1.0,
         verbose=True,
         checkpointing_steps=500,

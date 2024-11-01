@@ -5,7 +5,6 @@ from preprocess import preprocess
 from trainer_pti import main
 
 
-
 def train(
     input_images,
     output_dir,
@@ -28,7 +27,7 @@ def train(
     caption_prefix="a photo of",
     mask_target_prompts=None,
     crop_based_on_salience=True,
-    use_face_detection_instead=False,
+    use_face_detection_instead=True,
     clipseg_temperature=1.0,
     verbose=True,
     checkpointing_steps=200
@@ -57,7 +56,7 @@ def train(
 
     input_dir = preprocess(
         input_path=input_images,
-        output_dir=output_dir,
+        output_dir=input_images,
         caption_text=caption_prefix,
         token_string=token_string,
         class_name=class_name,
@@ -69,13 +68,12 @@ def train(
         substitution_tokens=list(token_dict.keys()),
     )
 
-    if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
-    os.makedirs(output_dir, exist_ok=True)
-
+    # if os.path.exists(output_dir):
+    #     shutil.rmtree(output_dir)
+    # os.makedirs(output_dir, exist_ok=True)
     main(
         pretrained_model_name_or_path=pretrained_model_name_or_path,
-        instance_data_dir=os.path.join(input_dir, "captions.csv"),
+        instance_data_dir=os.path.join(input_images, "captions.csv"),
         output_dir=output_dir,
         seed=seed,
         resolution=resolution,
@@ -133,8 +131,6 @@ if __name__ == '__main__':
     parser.add_argument('--checkpointing_steps', type=int, default=20000)
 
     args = parser.parse_args()
-    print(args)
-
     train(
         input_images=args.input_images,
         output_dir=args.output_dir,
