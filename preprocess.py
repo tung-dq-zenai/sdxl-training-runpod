@@ -44,9 +44,10 @@ def preprocess(
     temp: float,
     substitution_tokens: List[str],
 ) -> Path:
-
+    # training_data_dir = output_dir
     load_and_save_masks_and_captions(
         input_dir=input_path,
+        output_dir = output_dir , 
         caption_text=caption_text + " " + token_string + " " + class_name,
         mask_target_prompts=mask_target_prompts,
         target_size=target_size,
@@ -380,6 +381,7 @@ def orient_by_exif(pil_image: Image.Image):
 
 def load_and_save_masks_and_captions(
     input_dir: Union[str, List[str]],
+    output_dir : Optional[str] = None,
     caption_text: Optional[str] = None,
     mask_target_prompts: Optional[Union[List[str], str]] = None,
     target_size: int = 1024,
@@ -473,9 +475,9 @@ def load_and_save_masks_and_captions(
 
     data = []
     
-    if os.path.exists(training_data_dir):
-        shutil.rmtree(training_data_dir)
-    os.makedirs(training_data_dir, exist_ok=True)
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+    os.makedirs(output_dir, exist_ok=True)
 
     # iterate through the images, masks, and captions and add a row to the dataframe for each
     for idx, (image, mask, caption) in enumerate(zip(images, seg_masks, captions)):
@@ -494,7 +496,7 @@ def load_and_save_masks_and_captions(
 
     df = pd.DataFrame(columns=["image_path", "mask_path", "caption"], data=data)
     # save the dataframe to a CSV file
-    df.to_csv(os.path.join(training_data_dir, "captions.csv"), index=False)
+    df.to_csv(os.path.join(output_dir, "captions.csv"), index=False)
 
 
 

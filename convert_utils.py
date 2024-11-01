@@ -18,7 +18,7 @@ def add_processor_to_keys(keys):
 
         # Join the modified parts back together
         modified_key = '.'.join(new_key_parts)
-        modified_key = '.'.join(new_key_parts).replace('lora_A', 'lora.down').replace('lora_B', 'lora.up')
+        modified_key = '.'.join(new_key_parts).replace('lora_A', 'lora.down').replace('lora_B', 'lora.up').replace("to_out.0" , 'to_out')
         updated_keys.append(modified_key)
 
     return updated_keys

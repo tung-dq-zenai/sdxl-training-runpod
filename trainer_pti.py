@@ -9,18 +9,13 @@ from typing import List, Optional
 import numpy as np
 import torch
 import torch.utils.checkpoint
-<<<<<<< HEAD
 from diffusers.optimization import get_scheduler
 from safetensors.torch import save_file
 from tqdm.auto import tqdm
 from convert_utils import modify_and_save_lora_model , modify_and_save_embedding_model
-=======
-from diffusers.optimization import get_scheduler
-from safetensors.torch import save_file
 from peft import LoraConfig
-from tqdm.auto import tqdm
 
->>>>>>> serverless_branch/dev
+
 from dataset_and_utils import (
     PreprocessedDataset,
     TokenEmbeddingsHandler,
@@ -159,7 +154,7 @@ def main(
         # Do lora-training instead.
         unet.requires_grad_(True)
 
-        from peft import LoraConfig
+        
         target_modules = ["to_k", "to_q", "to_v", "to_out.0"]
 
         unet_lora_config = LoraConfig(
