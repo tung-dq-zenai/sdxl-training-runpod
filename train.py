@@ -68,9 +68,9 @@ def train(
         substitution_tokens=list(token_dict.keys()),
     )
 
-    if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
-    os.makedirs(output_dir, exist_ok=True)
+    # if os.path.exists(output_dir):
+    #     shutil.rmtree(output_dir)
+    # os.makedirs(output_dir, exist_ok=True)
     main(
         pretrained_model_name_or_path=pretrained_model_name_or_path,
         instance_data_dir=os.path.join(input_images, "captions.csv"),
