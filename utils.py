@@ -15,12 +15,8 @@ def prepare_training_data(aws_link_list, data_path):
 
 
 def handle_data_paths(
-    instance_data,
+    instance_data, instance_dir_name
 ):
-
-    # Create dir name compatible to Kohya scripts
-    instance_dir_name = f"data"
-
     for dir_name in [instance_dir_name]:
         if os.path.exists(dir_name):
             shutil.rmtree(dir_name)
@@ -30,5 +26,3 @@ def handle_data_paths(
     prepare_training_data(
         instance_data, instance_dir_name
     )
-
-    return instance_dir_name
